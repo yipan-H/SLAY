@@ -477,7 +477,8 @@ MonoBehaviour:
   BaseSpeed: 2
   moveWhileIdle: 0
   menu: {fileID: 0}
-  TerritoryRadius: 4
+  TerritoryRadius: 5
+  IsAggro: 0
 --- !u!61 &8644891166492499792
 BoxCollider2D:
   m_ObjectHideFlags: 0
