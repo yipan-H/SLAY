@@ -158,6 +158,7 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
     public void Hurt(int value)
     {
         Debug.Log(String.Format("Player got hurt, damage: {0}", value));
+        animator.SetTrigger("Hurt");
         Hp = Math.Clamp(Hp - value, 0, MaxHp);
     }
 

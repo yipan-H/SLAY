@@ -979,38 +979,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1061277707066850365, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_SortingOrder
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824412452885495830, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_Size.x
-      value: 1.6715448
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824412452885495830, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_Size.y
-      value: 1.2704176
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824412452885495830, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_Offset.x
-      value: -0.17253697
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824412452885495830, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_Offset.y
-      value: 0.4393999
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824412452885495830, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_IsTrigger
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1824412452885495830, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: m_UsedByComposite
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4369894897994506013, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
-      propertyPath: joystick
-      value: 
-      objectReference: {fileID: 0}
     - target: {fileID: 5491434913822922761, guid: e0dfee5f2d0071543950f1cdef64c2f1, type: 3}
       propertyPath: m_Name
       value: Player
@@ -38913,10 +38881,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4950176261680981570, guid: 372b5181224ba814dbea6f0734947b9a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7822118349494776156, guid: 372b5181224ba814dbea6f0734947b9a, type: 3}
-      propertyPath: moveWhileIdle
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8686674495562723389, guid: 372b5181224ba814dbea6f0734947b9a, type: 3}

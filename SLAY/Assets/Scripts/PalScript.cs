@@ -356,6 +356,7 @@ public class PalScript : MonoBehaviour
 
         ChangeState(PalState.Fighting);
         pal.Hurt(amount);
+        animator.SetTrigger("Hurt");
         Debug.Log(string.Format("Pal {0} get hurt, damage: {1}, health: {2}", name, amount, pal.Hp));
         if (pal.Hp <= 0)
         {
