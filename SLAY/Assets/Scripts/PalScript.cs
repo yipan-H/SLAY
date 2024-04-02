@@ -309,19 +309,19 @@ public class PalScript : MonoBehaviour
         rigidbody2d.MovePosition(Vector2.MoveTowards(rigidbody2d.position, target, Time.deltaTime * speed));
     }
 
-    const float TRACE_DISTANCE_MIN = 1.5f;
+    const float TRACE_DISTANCE_MIN = 2f;
     float LeaveFightTimer = 0f;
     const float LEAVE_FIGHT_THRESHOLD = 5f;
     public void HandleFighting()
     {
-        // Check if player out of territory
+        // Handle leaving fight
         if (Vector2.Distance(TerritoryCenter, transform.position) > TerritoryRadius)
         {
             LeaveFightTimer += Time.deltaTime;
             if (LeaveFightTimer >= LEAVE_FIGHT_THRESHOLD)
             {
                 ChangeState(PalState.Return);
-                Debug.Log("leave fight");
+                return;
             }
         }
         else
