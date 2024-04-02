@@ -9,13 +9,11 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
 {
     const float HUNGER_DECREASE_INTERVAL = 5f;
     const float MOVE_THRESHOLD = .1f;
-
     public Storage inventory;
     public float speed = 3.0f;
     public int health => Hp;
     public int maxHealth => MaxHp;
-
-    private bool isMoving = false;
+    private bool IsMoving = false;
     private float hungerTimer = 0f;
     MeleeAttack meleeAttack;
     Rigidbody2D rigidbody2d;
@@ -31,6 +29,7 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
         Hunger = MaxHunger;
 
         this.RegisterEvent<PlayerInteractEvent>(PlayerInteract);
+
         meleeAttack = GetComponent<MeleeAttack>();
         rigidbody2d = GetComponent<Rigidbody2D>();
         animator = transform.Find("Sprite").GetComponent<Animator>();
@@ -94,12 +93,12 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
 
         var x = joystick.Horizontal;
         var y = joystick.Vertical;
-        var offset = new Vector2(x, y);
-        isMoving = offset.magnitude >= MOVE_THRESHOLD;
-        if (isMoving)
+        var direction = new Vector2(x, y);
+        IsMoving = direction.magnitude >= MOVE_THRESHOLD;
+        if (IsMoving)
         {
             float step = speed * Time.deltaTime;
-            rigidbody2d.MovePosition(rigidbody2d.position + step * offset);
+            rigidbody2d.MovePosition(rigidbody2d.position + step * direction);
         }
     }
 
@@ -115,7 +114,6 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
                     collision.SendMessage("Pick");
                 }
 
-
                 //
                 //if(!XGame.MainController.NeedGamePause())
                 //{
@@ -125,8 +123,6 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
                 //AudioManager.Instance.StopAudio(AudioModel.Cloect);
                 //EventCenterManager.Send<SentUpdateGoldText>(new SentUpdateGoldText() { isShowPalu = true });  //发送
                 //XGame.MainController.DataMgr.AddReward(Reward.Gold,50);
-
-
 
                 //XGame.MainController.ShowUI<UI_Menu>(new MenuDate()
                 //{

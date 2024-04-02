@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using Unity.VisualScripting;
 using System.Collections;
 
 public struct PalType
@@ -88,7 +87,7 @@ public class Pal : IHealth, IExperience
 {
     public string TypeName;
 
-    public bool IsAggro = false;
+    // public bool IsAggro = false;
 
     public bool IsCaptured;
 
@@ -214,6 +213,7 @@ public class PalScript : MonoBehaviour
     {
         state = PalState.Idle;
         pal = new Pal("普通帕鲁");
+        StartCoroutine(AggroDetect());
     }
 
     // Update is called once per frame
@@ -251,7 +251,7 @@ public class PalScript : MonoBehaviour
         }
     }
 
-    const float FIGHT_SPEED_INC = .2f;
+    const float FIGHT_SPEED_INC = 0.2f;
     const float RETURN_SPEED_INC = 2f;
     void ChangeState(PalState toState)
     {
@@ -309,7 +309,7 @@ public class PalScript : MonoBehaviour
         rigidbody2d.MovePosition(Vector2.MoveTowards(rigidbody2d.position, target, Time.deltaTime * speed));
     }
 
-    const float TRACE_DISTANCE_MIN = 2f;
+    const float TRACE_DISTANCE_MIN = 1.6f;
     float LeaveFightTimer = 0f;
     const float LEAVE_FIGHT_THRESHOLD = 5f;
     public void HandleFighting()
@@ -447,5 +447,24 @@ public class PalScript : MonoBehaviour
         {
             ChangeState(PalState.Idle);
         }
+    }
+
+    public bool IsAggro = false;
+    IEnumerator AggroDetect()
+    {
+        if (!IsAggro) yield break;
+        for (; ; )
+        {
+            if (state == PalState.Idle || state == PalState.Stroll)
+            {
+                bool isPlayerInTerritory = Vector2.Distance(TerritoryCenter, PlayerScript.Instance.transform.position) <= TerritoryRadius;
+                if (isPlayerInTerritory)
+                {
+                    ChangeState(PalState.Fighting);
+                }
+            }
+            yield return new WaitForSeconds(.1f);
+        }
+
     }
 }
