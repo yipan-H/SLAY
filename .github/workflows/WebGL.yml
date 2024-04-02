@@ -50,6 +50,7 @@ jobs:
         with:
           targetPlatform: WebGL
           projectPath: 'SLAY/'
+          allowDirtyBuild: true
 
       # 将生成的build文件上次至Github的Artifacts部分
       - uses: actions/upload-artifact@v4
