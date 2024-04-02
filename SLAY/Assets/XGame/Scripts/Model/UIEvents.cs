@@ -51,4 +51,11 @@ namespace XGame
         public int max;
         public int value;
     }
+
+    public class ExpUpdatedEvent
+    {
+        public int min;
+        public int max;
+        public int value;
+    }
 }

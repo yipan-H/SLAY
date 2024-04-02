@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using XGame;
 public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, IHunger
 {
     const float HUNGER_DECREASE_INTERVAL = 5f;
+    const float MOVE_THRESHOLD = .1f;
 
     public Storage inventory;
     public float speed = 3.0f;
@@ -16,23 +18,31 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
     private bool isMoving = false;
     private float hungerTimer = 0f;
     MeleeAttack meleeAttack;
+    Rigidbody2D rigidbody2d;
+    Animator animator;
 
     public void Init()
     {
         inventory = new Storage(40);
 
-        var initPlayerRecord = XGame.MainController.GetRecord<Player_Record>(1);
-        Level = initPlayerRecord.Level;
-        MaxExp = initPlayerRecord.Exp;
-        MaxHp = initPlayerRecord.Hp;
-        MaxHunger = initPlayerRecord.Hunger;
-        MaxLevel = XGame.MainController.GetRecords<Player_Record>().Count;
-
+        ReadRecord(1);
+        Level = 1;
         Hp = MaxHp;
         Hunger = MaxHunger;
 
         this.RegisterEvent<PlayerInteractEvent>(PlayerInteract);
         meleeAttack = GetComponent<MeleeAttack>();
+        rigidbody2d = GetComponent<Rigidbody2D>();
+        animator = transform.Find("Sprite").GetComponent<Animator>();
+    }
+
+    void ReadRecord(int level)
+    {
+        var record = XGame.MainController.GetRecord<Player_Record>(level);
+        MaxExp = record.Exp;
+        MaxHp = record.Hp;
+        MaxHunger = record.Hunger;
+        MaxLevel = XGame.MainController.GetRecords<Player_Record>().Count;
     }
 
     void PlayerInteract(PlayerInteractEvent e)
@@ -41,7 +51,11 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
         switch (e.type)
         {
             case InteractType.Attack:
-                meleeAttack.Use();
+                if (meleeAttack.IsReady)
+                {
+                    animator.SetTrigger("Attack");
+                    meleeAttack.Use();
+                }
                 break;
             default:
                 break;
@@ -51,8 +65,12 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
     // Update is called once per frame
     void Update()
     {
-        HandleMoving();
         HandleHunger();
+    }
+
+    private void FixedUpdate()
+    {
+        HandleMoving();
     }
 
     void HandleHunger()
@@ -62,19 +80,11 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
         if (hungerDecreaseUnit <= 0) return;
         hungerTimer -= (float)hungerDecreaseUnit * HUNGER_DECREASE_INTERVAL;
         int hungerDecrease = hungerDecreaseUnit * 10;
+        if (hungerDecrease <= 0) return;
+
         Debug.Log(string.Format("player's hunger -{0}", hungerDecrease));
-        Hunger -= hungerDecrease;
-        if (Hunger < 0)
-        {
-            Hunger = 0;
-        }
-        EventCenterManager.Send<ShowHudEvent>();
-        EventCenterManager.Send(new HungerUpdatedEvent
-        {
-            min = 0,
-            max = MaxHunger,
-            value = Hunger
-        });
+        int newHunger = Hunger - hungerDecrease;
+        Hunger = newHunger < 0 ? 0 : newHunger;
     }
 
     private void HandleMoving()
@@ -84,11 +94,12 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
 
         var x = joystick.Horizontal;
         var y = joystick.Vertical;
-        isMoving = new Vector2(x, y).magnitude >= 0.1f;
+        var offset = new Vector2(x, y);
+        isMoving = offset.magnitude >= MOVE_THRESHOLD;
         if (isMoving)
         {
             float step = speed * Time.deltaTime;
-            transform.position += step * new Vector3(x, y, 0);
+            rigidbody2d.MovePosition(rigidbody2d.position + step * offset);
         }
     }
 
@@ -146,10 +157,25 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
 
     public void Hurt(int value)
     {
+        Debug.Log(String.Format("Player got hurt, damage: {0}", value));
         Hp = Math.Clamp(Hp - value, 0, MaxHp);
     }
 
-    public int Exp { get; protected set; }
+    int _Exp;
+    public int Exp
+    {
+        get => _Exp;
+        protected set
+        {
+            _Exp = value;
+            EventCenterManager.Send(new ExpUpdatedEvent
+            {
+                min = 0,
+                max = MaxExp,
+                value = _Exp
+            });
+        }
+    }
 
     public int MaxExp { get; protected set; }
 
@@ -160,15 +186,45 @@ public class PlayerScript : MonoSingleton<PlayerScript>, IHealth, IExperience, I
 
     public void GainExp(int value)
     {
-        // TODO
+        if (Level == MaxLevel) return;
+
+        int newExp = Exp + value;
+        if (newExp >= MaxExp)
+        {
+            Exp = 0;
+            LevelUp();
+        }
+        else
+        {
+            Exp = newExp;
+        }
     }
 
     protected void LevelUp()
     {
-        // TODO
+        if (Level >= MaxLevel) return;
+        Level++;
+        ReadRecord(Level);
+        Hp = MaxHp;
+        Hunger = MaxHunger;
+        XGame.MainController.ShowTips("Level Up");
     }
 
-    public int Hunger { get; protected set; }
+    int _Hunger;
+    public int Hunger
+    {
+        get => _Hunger;
+        protected set
+        {
+            _Hunger = value;
+            EventCenterManager.Send(new HungerUpdatedEvent
+            {
+                min = 0,
+                max = MaxHunger,
+                value = Hunger
+            });
+        }
+    }
 
     public int MaxHunger { get; protected set; }
 

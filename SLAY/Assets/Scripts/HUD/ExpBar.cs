@@ -1,17 +1,35 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using XGame;
 
 public class ExpBar : MonoBehaviour
 {
     Slider slider;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
+        this.RegisterEvent<ExpUpdatedEvent>(ExpUpdated);
+
         slider = GetComponent<Slider>();
-        slider.minValue = 0f;
-        slider.value = 0f;
+        slider.minValue = 0;
+    }
+
+    private void OnDestroy()
+    {
+        this.UnRegisterEvent<ExpUpdatedEvent>();
+    }
+
+    void ExpUpdated(ExpUpdatedEvent e)
+    {
+        EventCenterManager.Send<ShowHudEvent>();
+        if (slider.maxValue != e.max)
+        {
+            slider.maxValue = e.max;
+        }
+
+        if (slider.value != e.value)
+        {
+            slider.value = e.value;
+        }
     }
 }

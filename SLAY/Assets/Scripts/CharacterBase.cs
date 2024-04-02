@@ -52,11 +52,9 @@ public abstract class CharacterBase : MonoBehaviour, IHealth, IExperience, IHung
 
     public int MaxLevel { get; protected set;}
 
-
-
     public virtual void GainExp(int value)
     {
-        // TODO
+
     }
 
     public int Hunger { get; protected set; }
