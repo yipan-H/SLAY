@@ -181,6 +181,7 @@ namespace XGame
         {
             Init();
             ShowUI<UI_Permanent>();
+            ShowUI<ShowQuest>();
         }
 
         void OnDestroy()

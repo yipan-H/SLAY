@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 namespace XGame
 {
     [System.Serializable]
@@ -10,11 +11,12 @@ namespace XGame
         public int PaluHeath;
         public bool IsGet;
     }
+
     [System.Serializable]
     public class GameData
     {
         //账号基础数据
-        public System.DateTime RegisterTime;    //注册时间
+        public System.DateTime RegisterTime; //注册时间
         public System.DateTime LastLoginTime; //上次登陆时间
         public System.DateTime LastRefreshDataTime; //最近刷新数据时间
         public System.DateTime NextOffLineRewardTime;
@@ -25,13 +27,12 @@ namespace XGame
 
         public bool ISuODA;
 
-        /**
-         * 任务字典
-         */
-        public Dictionary<int, Quest> QuestDict;
+        //正在追踪的任务ID
+        public int trackingQuestId;
 
-        public List<PALU> PaLuList; 
-      
+        //任务字典
+        public Dictionary<string, Quest> QuestDict;
+
+        public List<PALU> PaLuList;
     }
-
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using LitJson;
+using Unity.VisualScripting;
 
 namespace XGame
 {
@@ -17,11 +19,71 @@ namespace XGame
         public List<Quest> questList;
     }
 
+    /// <summary>
+    /// 该类仅用于任务栏的任务显示
+    /// </summary>
+    public class QuestGroup
+    {
+        /**
+         * 任务类型
+         */
+        public QuestTypeEnum QuestTypeEnum;
+
+        /**
+         * 该类型任务是否隐藏
+         */
+        public bool hide;
+        
+        /**
+         * 当前任务类型下的可显示任务（激活、已达成条件、已完成)
+         */
+        public List<Quest> currentQuestList;
+    }
+
     public class QuestManager : Singleton<QuestManager>
     {
         private HashSet<int> finishedQuestSet = new HashSet<int>();
 
-        public Dictionary<int, Quest> questDict = new Dictionary<int, Quest>();
+        public Dictionary<string, Quest> questDict = new Dictionary<string, Quest>();
+
+        //正在被追踪的任务ID
+        private int trackingQuestId = -1;
+
+        public int TrackingQuestId
+        {
+            get => trackingQuestId;
+            set
+            {
+                if (!questDict.ContainsKey(value.ToString()))
+                {
+                    if (UIManager.Instance.isShowing<UI_QuestAbbr>())
+                    {
+                        XGame.MainController.HideUI<UI_QuestAbbr>();
+                    }
+                    return;
+                }
+                else
+                {
+                    trackingQuestId = value;
+                    GameData data = GameDataManager.Instance.GetGameData();
+                    data.trackingQuestId = trackingQuestId;
+                    if (UIManager.Instance.isShowing<UI_QuestAbbr>())
+                    {
+                        EventCenterManager.Send<UpdateTrackingQuestEvent>(new UpdateTrackingQuestEvent(questDict[trackingQuestId.ToString()]));
+                    }
+                    else
+                    {
+                        XGame.MainController.ShowUI<UI_QuestAbbr>(questDict[trackingQuestId.ToString()]);
+                    }
+                    
+                }
+                
+            }
+        }
+
+        //任务UI正在显示的任务
+        public Quest showingQuest;
+
 
         /// <summary>
         /// 读取任务列表，先从保存数据中获取，如获取不到则解析JSON
@@ -29,11 +91,13 @@ namespace XGame
         /// <param name="json"></param>
         public void loadQuest()
         {
+           
             if (questDict.Count != 0)
             {
                 return;
             }
-            if (GameDataManager.Instance.Data.QuestDict == null)
+            GameData data = GameDataManager.Instance.GetGameData();
+            if (data.QuestDict == null)
             {
                 parseJson();
                 GameDataManager.Instance.setQuestDict();
@@ -114,12 +178,13 @@ namespace XGame
                 }
 
                 return quest;
-            }).ToDictionary(quest => quest.questId);
+            }).ToDictionary(quest => quest.questId.ToString());
         }
 
 
         /// <summary>
         /// 刷新单个任务的状态
+        /// 当有任务完成时，调用此任务将与之相关的后置任务设置为激活状态
         /// </summary>
         /// <param name="quest"></param>
         public void freshQuestStatus(Quest quest)
@@ -153,17 +218,17 @@ namespace XGame
         /// <param name="questList"></param>
         private void freshQuestStatus()
         {
-            foreach (int questId in questDict.Keys)
+            foreach (string questId in questDict.Keys)
             {
                 freshQuestStatus(questDict[questId]);
             }
         }
 
         /// <summary>
-        /// 将任务设为已完成
+        /// 将任务设为已达标
         /// </summary>
         /// <param name="questId"></param>
-        public void finishQuest(Quest quest)
+        public void achieveQuest(Quest quest)
         {
             if (quest == null)
             {
@@ -176,11 +241,8 @@ namespace XGame
                 Debug.LogError(quest.questId + " is not active");
                 return;
             }
-
-            finishedQuestSet.Add(quest.questId);
-            quest.questStatus = (byte)QuestStatusEnum.FINISHED;
-            freshQuestStatus();
-            EventCenterManager.Send(new QuestUpdateEvent(quest));
+            
+            quest.questStatus = (byte)QuestStatusEnum.ACHIEVED;
         }
 
         /// <summary>
@@ -200,27 +262,27 @@ namespace XGame
                 return;
             }
             quest.questStatus = (byte)QuestStatusEnum.ACTIVE;
-            EventCenterManager.Send(new QuestUpdateEvent(quest));
         }
         
         /// <summary>
-        /// 将任务设为已提交
+        /// 将任务设为已完成
         /// </summary>
         /// <param name="quest"></param>
-        public void submitQuest(Quest quest)
+        public void finishQuest(Quest quest)
         {
             if (quest == null)
             {
                 Debug.LogError(quest.questId + " not found");
                 return;
             }
-            if (quest.questStatus != (byte)QuestStatusEnum.FINISHED)
+            if (quest.questStatus != (byte)QuestStatusEnum.ACHIEVED)
             {
                 Debug.Log(quest.questId + " is not finished");
                 return;
             }
-            quest.questStatus = (byte)QuestStatusEnum.SUBMITED;
-            EventCenterManager.Send(new QuestUpdateEvent(quest));
+            quest.questStatus = (byte)QuestStatusEnum.FINISHED;
+            finishedQuestSet.Add(quest.questId);
+            freshQuestStatus();
         }
 
         /// <summary>
@@ -241,7 +303,7 @@ namespace XGame
         public List<Quest> getFinishedQuestList()
         {
             freshQuestStatus();
-            return questDict.Values.Where(quest => quest.questStatus == (byte)QuestStatusEnum.FINISHED || quest.questStatus == (byte) QuestStatusEnum.SUBMITED)
+            return questDict.Values.Where(quest => quest.questStatus == (byte)QuestStatusEnum.ACHIEVED || quest.questStatus == (byte) QuestStatusEnum.FINISHED)
                 .OrderBy(quest => quest.questId).ToList();
         }
 
@@ -264,7 +326,7 @@ namespace XGame
         {
             foreach (Quest quest in questDict.Values)
             {
-                if (quest.questStatus == (byte)QuestStatusEnum.FINISHED)
+                if (quest.questStatus == (byte)QuestStatusEnum.ACHIEVED)
                 {
                     finishedQuestSet.Add(quest.questId);
                 }
@@ -281,6 +343,8 @@ namespace XGame
         public void updateQuestCondition(QuestConditionTypeEnum typeEnum, QuestConditionObjectEnum objectEnum, int num)
         {
             List<Quest> activeQuestList = getActiveQuestList();
+            //需要更新UI的任务列表
+            HashSet<Quest> needUpdateQuestSet = new HashSet<Quest>();
             //遍历所有任务
             foreach (Quest quest in activeQuestList)
             {
@@ -288,7 +352,8 @@ namespace XGame
                 List<QuestCondition> questQuestConditionList = quest.questConditionList;
                 if (questQuestConditionList == null)
                 {
-                    finishQuest(quest);
+                    needUpdateQuestSet.Add(quest);
+                    achieveQuest(quest);
                     continue;
                 }
 
@@ -308,7 +373,7 @@ namespace XGame
                         {
                             questCondition.currentNum += num;
                         }
-                        EventCenterManager.Send(new QuestUpdateEvent(quest));
+                        needUpdateQuestSet.Add(quest);
                     }
 
                     if (questCondition.currentNum < questCondition.conditionNum)
@@ -320,9 +385,23 @@ namespace XGame
                 //所有条件都达成时，该任务变为完成状态
                 if (achieved)
                 {
-                    finishQuest(quest);
+                    achieveQuest(quest);
                 }
             }
+            //遍历所有需要更新的任务UI
+            foreach (Quest quest in needUpdateQuestSet)
+            {
+                if (quest.questId == showingQuest.questId)
+                {
+                    EventCenterManager.Send<UpdateShowingQuestEvent>(new UpdateShowingQuestEvent(quest));
+                }
+
+                if (quest.questId == trackingQuestId)
+                {
+                    EventCenterManager.Send<UpdateTrackingQuestEvent>(new UpdateTrackingQuestEvent(quest));
+                }
+            }
+            EventCenterManager.Send<UpdateQuestListEvent>(new UpdateQuestListEvent());
         }
 
         /// <summary>
@@ -331,15 +410,15 @@ namespace XGame
         /// <param name="questId"></param>
         public void submitQuest(int questId)
         {
-            Quest quest = questDict[questId];
-            if (quest == null || quest.questStatus != (byte)QuestStatusEnum.FINISHED)
+            Quest quest = questDict[questId.ToString()];
+            if (quest == null || quest.questStatus != (byte)QuestStatusEnum.ACHIEVED)
             {
                 return;
             }
             //修改任务状态为已提交
-            submitQuest(quest);
+            finishQuest(quest);
             
-            //todo 遍历任务达成条件列表（有些道具在任务达成之后，需要从玩家拥有的道具删除）
+            //todo 遍历任务达成条件列表（有些道具在任务达成之后，需要从玩家拥有的道具删除， 策划说暂时没有这样的任务，那就暂时先不管）
             
             //遍历任务奖励列表
             List<QuestReward> questQuestRewardList = quest.questRewardList;
@@ -351,8 +430,40 @@ namespace XGame
                 //todo 这里需要写玩家获取道具的逻辑，等待后续补充
             }
 
+            if (quest.questId == showingQuest.questId)
+            {
+                EventCenterManager.Send<UpdateShowingQuestEvent>(new UpdateShowingQuestEvent(quest));
+            }
+
+            if (quest.questId == trackingQuestId)
+            {
+                EventCenterManager.Send<UpdateTrackingQuestEvent>(new UpdateTrackingQuestEvent(quest));
+            }
+            EventCenterManager.Send<UpdateQuestListEvent>(new UpdateQuestListEvent());
             XGame.MainController.ShowUI<UI_QuestDialog>(builder.ToString());
 
+        }
+        
+
+        /// <summary>
+        /// 分类型获取当前显示的任务列表
+        /// </summary>
+        /// <returns></returns>
+        public List<QuestGroup> getQuestGroupList()
+        {
+            freshQuestStatus();
+            List<QuestGroup> currentQuestList = new List<QuestGroup>();
+            foreach (QuestTypeEnum value in Enum.GetValues(typeof(QuestTypeEnum)))
+            {
+                QuestGroup questGroup = new QuestGroup();
+                currentQuestList.Add(questGroup);
+                questGroup.QuestTypeEnum = value;
+                // 获取特定任务类型的非隐藏任务，并先按照任务类型排序，再根据
+                questGroup.currentQuestList = questDict.Values.Where(quest => quest.questStatus != (byte)QuestStatusEnum.HIDE 
+                        && quest.questType == (byte)value).ToList();
+            }
+
+            return currentQuestList;
         }
     }
 }

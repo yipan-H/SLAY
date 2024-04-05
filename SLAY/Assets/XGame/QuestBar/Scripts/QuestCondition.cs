@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace XGame
 {
@@ -7,21 +8,25 @@ namespace XGame
         /**
          * 捕获帕鲁
          */
+        [Description("捕获帕鲁")]
         CAPTURE = 0,
 
         /**
          * 获取物品
          */
+        [Description("获取物品")]
         OBTAIN = 1,
      
         /**
-         * 拥有物品
+         * 拥有物品(拥有和获取的区别是拥有仅关注玩家目前是否持有该任务道具，而获取仅关注玩家是否曾经获取过该任务道具）！！！该类型暂不使用
          */
+        [Description("拥有物品")]
         POSSESS = 2,
         
         /**
          * 击杀
          */
+        [Description("击杀帕鲁")]
         KILLED = 3
     }
 
