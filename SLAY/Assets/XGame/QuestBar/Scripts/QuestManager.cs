@@ -56,6 +56,7 @@ namespace XGame
             {
                 if (!questDict.ContainsKey(value.ToString()))
                 {
+                    //如果目前的追踪任务ID不存在于任务字典中，则将现实中的缩略UI隐藏
                     if (UIManager.Instance.isShowing<UI_QuestAbbr>())
                     {
                         XGame.MainController.HideUI<UI_QuestAbbr>();
@@ -64,6 +65,7 @@ namespace XGame
                 }
                 else
                 {
+                    //将追踪的任务ID持久化，并更新任务缩略UI
                     trackingQuestId = value;
                     GameData data = GameDataManager.Instance.GetGameData();
                     data.trackingQuestId = trackingQuestId;

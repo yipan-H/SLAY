@@ -24,8 +24,9 @@ namespace XGame
 
     public class UI_QuestBar : UIView
     {
+        //任务类型UI预制体
         [SerializeField] private GameObject UI_QuestTypePrefab;
-
+        
         private Transform contentTransform;
 
         private Dictionary<QuestTypeEnum, UI_QuestType> questTypeDict;
