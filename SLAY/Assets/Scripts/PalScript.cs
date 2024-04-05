@@ -1,8 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using static UnityEngine.ParticleSystem;
+using TMPro;
+using System.Collections;
 
 public struct PalType
 {
@@ -23,24 +22,36 @@ public struct PalType
         this.maxHunger = maxHunger;
         this.money = money;
 
-        this.baseLevel = 0;
+        this.baseLevel = 1;
         workSkills = new Dictionary<string, int>();
         battleSkills = new List<string>();
     }
 }
 
+public enum PalBelong
+{
+    Wild, Home
+}
+
 public static class PalTypes
 {
-    public static Dictionary<string, PalType> palTypes;
+    static Dictionary<string, PalType> Dic;
 
     static PalTypes()
     {
-        palTypes = new Dictionary<string, PalType>(); ;
-        palTypes.Add("普通帕鲁", new PalType("普通帕鲁", "", 100, 100, 10));
-        palTypes.Add("搬运帕鲁", new PalType("搬运帕鲁", "", 120, 120, 10));
-        palTypes.Add("制作帕鲁", new PalType("制作帕鲁", "", 80, 80, 10));
-        palTypes.Add("料理帕鲁", new PalType("料理帕鲁", "", 90, 90, 10));
-        palTypes.Add("金币帕鲁", new PalType("金币帕鲁", "", 150, 150, 100));
+        Dic = new Dictionary<string, PalType>
+        {
+            { "普通帕鲁", new PalType("普通帕鲁", "", 100, 100, 10) },
+            { "搬运帕鲁", new PalType("搬运帕鲁", "", 120, 120, 10) },
+            { "制作帕鲁", new PalType("制作帕鲁", "", 80, 80, 10) },
+            { "料理帕鲁", new PalType("料理帕鲁", "", 90, 90, 10) },
+            { "金币帕鲁", new PalType("金币帕鲁", "", 150, 150, 100) }
+        };
+    }
+
+    public static PalType Get(string key)
+    {
+        return Dic[key];
     }
 }
 
@@ -64,34 +75,66 @@ public static class PalBattleSkills
 
     public static void Init()
     {
-        skills = new Dictionary<string, PalBattleSkill>();
-        skills.Add("技能1", new PalBattleSkill("技能1", "", 35));
-        skills.Add("技能2", new PalBattleSkill("技能2", "", 50));
+        skills = new Dictionary<string, PalBattleSkill>
+        {
+            { "技能1", new PalBattleSkill("技能1", "", 35) },
+            { "技能2", new PalBattleSkill("技能2", "", 50) }
+        };
     }
 }
 
-public class Pal
+public class Pal : IHealth, IExperience
 {
-    public string typeName;
-    public int health;
-    public int hunger;
-    public int san;
-    public int level;
-    public int exp;
-    public bool isCaptured; //是否被玩家抓住了
+    public string TypeName;
 
-    public const int MAX_SAN = 100;  // 最大心情值
-    public const int MAX_EXP = 100;  // 经验条
+    // public bool IsAggro = false;
+
+    public bool IsCaptured;
 
     public Dictionary<string, int> workSkills = new Dictionary<string, int>();
     public List<string> battleSkills = new List<string>();
 
-    public PalType type
+    public Pal(string typeName)
+    {
+        TypeName = typeName;
+
+        MaxHp = Type.maxHp;
+        Hp = MaxHp;
+    }
+
+    public PalType Type
     {
         get
         {
-            return PalTypes.palTypes[typeName];
+            return PalTypes.Get(TypeName);
         }
+    }
+
+    public int Hp { get; protected set; }
+
+    public int MaxHp { get; protected set; }
+
+    public virtual void Heal(int value)
+    {
+        Hp = System.Math.Clamp(Hp + value, 0, MaxHp);
+    }
+
+    public virtual void Hurt(int value)
+    {
+        Hp = System.Math.Clamp(Hp - value, 0, MaxHp);
+    }
+
+    public int Exp { get; protected set; }
+
+    public int MaxExp { get; protected set; }
+
+    public int Level { get; protected set; }
+
+    public int MaxLevel { get; protected set; }
+
+    public virtual void GainExp(int value)
+    {
+        // TODO
     }
 
     // 设置工作技能
@@ -121,41 +164,12 @@ public class Pal
         battleSkills.Remove(skillName);
     }
 
-    // 获得经验值
-    public void GainExp(int amount)
-    {
-        exp += amount;
-        if (exp >= MAX_EXP)
-        {
-            exp = 0;
-            LevelUp();
-        }
-    }
+    public int MinDamage { get => 5; }
+    public int MaxDamage { get => 10; }
 
-    // 等级增加
-    private void LevelUp()
+    public int GetDamage()
     {
-        level++;
-        // 执行其他升级相关的操作
-    }
-
-    //治疗帕鲁
-    public void Heal(int amount)
-    {
-        health += amount;
-        if (health > type.maxHp)
-        {
-            health = type.maxHp;
-        }
-    }
-
-    public void Hurt(int amount)
-    {
-        health -= amount;
-        if (health < 0)
-        {
-            health = 0;
-        }
+        return Random.Range(MinDamage, MaxDamage + 1);
     }
 }
 
@@ -163,38 +177,43 @@ public enum PalState
 {
     Idle,
     Working,
-    Moving,
+    Stroll,
     Fighting,
-    Dead
+    Dead,
+    Return
 }
 
 public class PalScript : MonoBehaviour
 {
     public Pal pal;
     public PalState state;
-    public float speed = 2f;
+    public float BaseSpeed = 2f;
+    float AdditionalSpeed = 0;
+    public float speed { get => Mathf.Max(BaseSpeed + AdditionalSpeed, 0); }
     public bool moveWhileIdle = true;
     public GameObject menu;
 
-    private Vector3 targetPosition;
+    // 闲逛目的地
+    private Vector3 StrollTargetPosition;
+    Rigidbody2D rigidbody2d;
+    TextMeshProUGUI text;
+    Animator animator;
 
     private void Awake()
     {
+        text = transform.Find("Canvas/HP").GetComponent<TextMeshProUGUI>();
+        rigidbody2d = GetComponent<Rigidbody2D>();
+        animator = transform.Find("Sprite").GetComponent<Animator>();
+        MeleeAttackTimer = MeleeAttackCd;
+        TerritoryCenter = transform.position;
     }
 
     // Start is called before the first frame update
     void Start()
     {
         state = PalState.Idle;
-
-        pal = new Pal();
-        pal.typeName = "普通帕鲁";
-        pal.health = pal.type.maxHp;
-        pal.hunger = 0;
-        pal.san = Pal.MAX_SAN;
-        pal.level = 1;
-        pal.exp = 0;
-        pal.isCaptured = false;
+        pal = new Pal("普通帕鲁");
+        StartCoroutine(AggroDetect());
     }
 
     // Update is called once per frame
@@ -203,19 +222,9 @@ public class PalScript : MonoBehaviour
         switch (state)
         {
             case PalState.Idle:
-                if (moveWhileIdle)
-                {
-                    targetPosition = new Vector3(Random.Range(-5f, 5f), Random.Range(-5f, 5f), 0);
-                    state = PalState.Moving;
-                }
+                HandleIdle();
                 break;
             case PalState.Working:
-                // 处理Working状态下的逻辑
-                break;
-            case PalState.Fighting:
-                break;
-            case PalState.Moving:
-                MoveToTarget(targetPosition);
                 break;
             case PalState.Dead:
                 break;
@@ -224,27 +233,118 @@ public class PalScript : MonoBehaviour
         }
     }
 
-    private void MoveToTarget(Vector3 target)
+    private void FixedUpdate()
     {
-        float step = speed * Time.deltaTime; // 移动速度
-        transform.position = Vector3.MoveTowards(transform.position, target, step); // 移动至目标位置
-
-        if (Vector3.Distance(transform.position, target) < 0.001f) // 到达目标位置
+        switch (state)
         {
-            state = PalState.Idle;
+            case PalState.Stroll:
+                HandleStroll();
+                break;
+            case PalState.Fighting:
+                HandleFighting();
+                break;
+            case PalState.Return:
+                HandleReturn();
+                break;
+            default:
+                break;
         }
     }
 
-    //帕鲁工作
-    public void Work()
+    const float FIGHT_SPEED_INC = 0.2f;
+    const float RETURN_SPEED_INC = 2f;
+    void ChangeState(PalState toState)
     {
-        Debug.Log("pal work");
+        if (state == toState) return;
+
+        if (state == PalState.Fighting)
+        {
+            AdditionalSpeed -= FIGHT_SPEED_INC;
+        }
+        else if (toState == PalState.Fighting)
+        {
+            AdditionalSpeed += FIGHT_SPEED_INC;
+        }
+
+        if (state == PalState.Return)
+        {
+            AdditionalSpeed -= RETURN_SPEED_INC;
+        }
+        else if (toState == PalState.Return)
+        {
+            AdditionalSpeed += RETURN_SPEED_INC;
+        }
+
+        state = toState;
+        SyncStatusUI();
     }
 
-    //帕鲁战斗
-    public void Fight()
+    void HandleIdle()
     {
+        if (moveWhileIdle)
+        {
+            StrollTargetPosition = TerritoryCenter + Random.insideUnitCircle * TerritoryRadius;
+            ChangeState(PalState.Stroll);
+        }
+    }
 
+    float StrollTimer = 0f;
+    const float MOVE_TIMER_MAX = 5f;
+    const float ARRIVE_THRESHOLD = .1f;
+    private void HandleStroll()
+    {
+        MoveToTarget(StrollTargetPosition);
+        StrollTimer += Time.deltaTime;
+
+        if (StrollTimer >= MOVE_TIMER_MAX || Vector2.Distance(rigidbody2d.position, StrollTargetPosition) < ARRIVE_THRESHOLD)
+        {
+            ChangeState(PalState.Idle);
+            StrollTimer = 0f;
+        }
+    }
+
+    // TODO: 改为寻路算法
+    void MoveToTarget(Vector2 target)
+    {
+        rigidbody2d.MovePosition(Vector2.MoveTowards(rigidbody2d.position, target, Time.deltaTime * speed));
+    }
+
+    const float TRACE_DISTANCE_MIN = 1.6f;
+    float LeaveFightTimer = 0f;
+    const float LEAVE_FIGHT_THRESHOLD = 5f;
+    public void HandleFighting()
+    {
+        // Handle leaving fight
+        if (Vector2.Distance(TerritoryCenter, transform.position) > TerritoryRadius)
+        {
+            LeaveFightTimer += Time.deltaTime;
+            if (LeaveFightTimer >= LEAVE_FIGHT_THRESHOLD)
+            {
+                ChangeState(PalState.Return);
+                return;
+            }
+        }
+        else
+        {
+            LeaveFightTimer = 0f;
+        }
+
+
+        // Move toward player
+        var playerPosition = PlayerScript.Instance.transform.position;
+        float playerDistance = Vector2.Distance(playerPosition, rigidbody2d.position);
+        if (playerDistance > TRACE_DISTANCE_MIN)
+        {
+            MoveToTarget(playerPosition);
+        }
+        else
+        {
+            // Attack if within range
+            if (IsMeleeAttackReady)
+            {
+                MeleeAttack();
+            }
+        }
     }
 
     public void Hurt(int amount)
@@ -254,20 +354,22 @@ public class PalScript : MonoBehaviour
             return;
         }
 
-        state = PalState.Fighting;
+        ChangeState(PalState.Fighting);
         pal.Hurt(amount);
-        Debug.Log(string.Format("Pal {0} get hurt, damage: {1}, health: {2}", name, amount, pal.health));
-        if (pal.health == 0)
+        animator.SetTrigger("Hurt");
+        Debug.Log(string.Format("Pal {0} get hurt, damage: {1}, health: {2}", name, amount, pal.Hp));
+        if (pal.Hp <= 0)
         {
             Die();
         }
+        SyncStatusUI();
     }
 
     void Die()
     {
-        // 当帕鲁死亡执行的操作
-        Debug.Log("啊我死了");
-        state = PalState.Dead;
+        Debug.Log("pal died");
+        ChangeState(PalState.Dead);
+        PlayerScript.Instance.GainExp(50);
         Destroy(gameObject);
     }
 
@@ -279,5 +381,90 @@ public class PalScript : MonoBehaviour
     public void Inspect()
     {
         Debug.Log("pal inspected");
+    }
+
+    void SyncStatusUI()
+    {
+        var newText = "HP: " + pal.Hp.ToString();
+        if (text.text != newText)
+        {
+            text.text = newText;
+        }
+
+        var newColor = state == PalState.Fighting ? Color.red : Color.white;
+        if (text.color != newColor)
+        {
+            text.color = newColor;
+        }
+    }
+
+    bool IsMeleeAttackReady => MeleeAttackTimer >= MeleeAttackCd;
+    float MeleeAttackCd = 3f;
+    void MeleeAttack()
+    {
+        if (!IsMeleeAttackReady) return;
+
+        animator.SetTrigger("Attack");
+        PlayerScript.Instance.Hurt(pal.GetDamage());
+        StartCoroutine(MeleeAttackRegain());
+    }
+
+    float MeleeAttackTimer = 0f;
+    IEnumerator MeleeAttackRegain()
+    {
+        MeleeAttackTimer = 0f;
+        while (MeleeAttackTimer < MeleeAttackCd)
+        {
+            yield return null;
+            MeleeAttackTimer += Time.deltaTime;
+        }
+        Debug.Log("melee attack regained");
+    }
+
+    bool IsCastAttackReady = true;
+    void CastAttack()
+    {
+        // TODO
+    }
+
+    public float TerritoryRadius = 4f;
+    Vector2 TerritoryCenter;
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        if (TerritoryCenter != null)
+        {
+            Gizmos.DrawWireSphere(TerritoryCenter, TerritoryRadius);
+        }
+    }
+
+    void HandleReturn()
+    {
+        MoveToTarget(TerritoryCenter);
+
+        if (Vector2.Distance(rigidbody2d.position, TerritoryCenter) < ARRIVE_THRESHOLD)
+        {
+            ChangeState(PalState.Idle);
+        }
+    }
+
+    public bool IsAggro = false;
+    IEnumerator AggroDetect()
+    {
+        if (!IsAggro) yield break;
+        for (; ; )
+        {
+            if (state == PalState.Idle || state == PalState.Stroll)
+            {
+                bool isPlayerInTerritory = Vector2.Distance(TerritoryCenter, PlayerScript.Instance.transform.position) <= TerritoryRadius;
+                if (isPlayerInTerritory)
+                {
+                    ChangeState(PalState.Fighting);
+                }
+            }
+            yield return new WaitForSeconds(.1f);
+        }
+
     }
 }

@@ -38,6 +38,8 @@ public class MeleeAttack : MonoBehaviour
         }
     }
 
+    public bool IsReady => _wait <= 0f;
+
     public void Use()
     {
         if (_wait > 0f)
@@ -53,7 +55,7 @@ public class MeleeAttack : MonoBehaviour
             if (collider.tag != "Pal") continue;
             Debug.Log("melee attack " + collider.name);
             var palScript = collider.GetComponent<PalScript>();
-            if (palScript == null || palScript.pal.isCaptured) continue;
+            if (palScript == null || palScript.pal.IsCaptured) continue;
             palScript.Hurt(damage);
         }
     }

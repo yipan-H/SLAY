@@ -181,7 +181,6 @@ namespace XGame
         {
             Init();
             ShowUI<UI_Permanent>();
-            HudController.Instance.Init();
         }
 
         void OnDestroy()
@@ -221,9 +220,13 @@ namespace XGame
             //音頻初始化
             AudioManager.Instance.Init();
             //读取信息
-            GameDataManager.Instance.LoadData();
+            // GameDataManager.Instance.LoadData();
             //TipsManager初始化
             TipsManager.Instance.Init();
+
+            HudController.Instance.Init();
+
+            PlayerScript.Instance.Init();
         }
 
         void InitLanguage()
@@ -274,31 +277,31 @@ namespace XGame
             }
 
             //--印尼语的本地化  墨西哥、老挝、菲律宾
-            string languageString;
-#if UNITY_EDITOR
-            languageString = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-#elif UNITY_ANDROID
-            languageString = AndroidUtil.GetLanguage();
-#elif UNITY_IOS
-            languageString = getPreferredLanguage();
-#endif
-            string wholeString = languageString;
-            if (languageString == "lo")
-            {
-                curlanguageType = LanguageTypeEnum.Laothian;
-            }
-            else if (languageString == "fil")
-            {
-                curlanguageType = LanguageTypeEnum.Pilipinas;
-            }
-            else
-            {
-                languageString = languageString.Substring(0, languageString.IndexOf('-') <= 0 ? languageString.Length : languageString.IndexOf('-'));
-                if (languageString == "hi")
-                {
-                    curlanguageType = LanguageTypeEnum.Hindi;
-                }
-            }
+//            string languageString;
+//#if UNITY_EDITOR
+//            languageString = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+//#elif UNITY_ANDROID
+//            languageString = AndroidUtil.GetLanguage();
+//#elif UNITY_IOS
+//            languageString = getPreferredLanguage();
+//#endif
+//            string wholeString = languageString;
+//            if (languageString == "lo")
+//            {
+//                curlanguageType = LanguageTypeEnum.Laothian;
+//            }
+//            else if (languageString == "fil")
+//            {
+//                curlanguageType = LanguageTypeEnum.Pilipinas;
+//            }
+//            else
+//            {
+//                languageString = languageString.Substring(0, languageString.IndexOf('-') <= 0 ? languageString.Length : languageString.IndexOf('-'));
+//                if (languageString == "hi")
+//                {
+//                    curlanguageType = LanguageTypeEnum.Hindi;
+//                }
+//            }
 
             LanguageManager.Instance.Init(curlanguageType);
         }
@@ -316,23 +319,23 @@ namespace XGame
 
         private void OnApplicationFocus(bool focus)
         {
-            if (!focus)
-            {
-                LeaveTime = System.DateTime.Now;
-                SaveData();
-            }
-            else
-            {
-            }
+            //if (!focus)
+            //{
+            //    LeaveTime = System.DateTime.Now;
+            //    SaveData();
+            //}
+            //else
+            //{
+            //}
         }
         private void OnApplicationQuit()
         {
-            SaveData();
+            //SaveData();
         }
 
         private void OnApplicationPause(bool pause)
         {
-            if (pause) SaveData();
+           // if (pause) SaveData();
         }
     }
 }

@@ -73,3 +73,9 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /SLAY/[Aa]ssets/[Ss]treamingAssets/aa.meta
 /SLAY/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Ignore temporaries from GameCI
+/[Aa]rtifacts/
+/[Cc]odeCoverage/
+/SLAY/[Aa]rtifacts/
+/SLAY/[Cc]odeCoverage/

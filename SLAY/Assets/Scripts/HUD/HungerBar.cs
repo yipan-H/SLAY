@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using XGame;
@@ -23,6 +21,7 @@ public class HungerBar : MonoBehaviour
 
     void HungerUpdated(HungerUpdatedEvent e)
     {
+        EventCenterManager.Send<ShowHudEvent>();
         if (slider.maxValue != e.max)
         {
             slider.maxValue = e.max;
