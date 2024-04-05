@@ -34,6 +34,7 @@ namespace XGame
         //正在追踪的任务
         public Quest quest;
 
+        //缩略UI的箭头图片
         public Image image;
 
         //任务缩略UI是否隐藏
