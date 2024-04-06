@@ -146,7 +146,24 @@ namespace XGame
        /// </summary>
         public void setQuestDict()
         {
-            Data.QuestDict = QuestManager.Instance.questDict;
+            if (Data != null)
+            {
+                Data.QuestDict = QuestManager.Instance.questDict;
+            }
+        }
+
+       /// <summary>
+       /// 获取GameData
+       /// </summary>
+       /// <returns></returns>
+        public GameData GetGameData()
+        {
+            if (Data == null)
+            {
+                LoadData();
+            }
+
+            return Data;
         }
 
     }

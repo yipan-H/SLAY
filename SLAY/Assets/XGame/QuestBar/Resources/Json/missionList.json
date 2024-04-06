@@ -35,30 +35,6 @@
       "questConditionObjects": "1",
       "questConditionNums": "3",
       "questConditionTypes": "0"
-    },
-    {
-      "questId": "1003",
-      "questName": "制作熔炼炉2",
-      "questDescription": "制作熔炼炉 * 2",
-      "questType": "1",
-      "preQuests": "",
-      "questRewardObjects": "0,100",
-      "questRewardNums": "50,2",
-      "questConditionObjects": "1",
-      "questConditionNums": "3",
-      "questConditionTypes": "0"
-    },
-    {
-      "questId": "1004",
-      "questName": "制作熔炼炉3",
-      "questDescription": "制作熔炼炉 * 3",
-      "questType": "2",
-      "preQuests": "",
-      "questRewardObjects": "0,100",
-      "questRewardNums": "50,2",
-      "questConditionObjects": "1",
-      "questConditionNums": "3",
-      "questConditionTypes": "0"
     }
   ]
 }
